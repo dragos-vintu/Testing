@@ -243,7 +243,7 @@ class SoundEffects:
         return pygame.sndarray.make_sound(arr)
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, spray_image_path=None):
+    def __init__(self, spray_image_path=None, joystick=None):
         super().__init__()
         
         # Try to load the spray image
@@ -264,6 +264,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.bottom = SCREEN_HEIGHT - 20
         self.speed = 5
         self.shoot_cooldown = 0
+        self.joystick = joystick
         
     def create_default_sprite(self):
         # Fallback to drawn sprite if image can't be loaded - 2x wider!
@@ -304,33 +305,26 @@ class Player(pygame.sprite.Sprite):
         
     def update(self):
         keys = pygame.key.get_pressed()
-        
-        # Movement via keyboard
-        if keys[pygame.K_LEFT] and self.player.rect.left > 0:
-            self.player.rect.x -= self.player.speed
-        if keys[pygame.K_RIGHT] and self.player.rect.right < SCREEN_WIDTH:
-            self.player.rect.x += self.player.speed
 
-        # Movement via joystick axis
+        # Movement via keyboard
+        if keys[pygame.K_LEFT] and self.rect.left > 0:
+            self.rect.x -= self.speed
+        if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH:
+            self.rect.x += self.speed
+
+        # Movement via joystick axis (X axis)
         if self.joystick:
             x_axis = self.joystick.get_axis(0)
             if abs(x_axis) > 0.2:
-                self.player.rect.x += int(x_axis * self.player.speed)
+                self.rect.x += int(x_axis * self.speed)
 
-        # Shooting: SPACE or Button 0 (usually A)
-        shoot_pressed = keys[pygame.K_SPACE]
-        if self.joystick:
-            shoot_pressed = shoot_pressed or self.joystick.get_button(0)
+        # Keep player within screen bounds
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
 
-        if shoot_pressed:
-            bullet = self.player.shoot()
-            if bullet:
-                self.bullets.add(bullet)
-                self.all_sprites.add(bullet)
-                if SOUND_ENABLED:
-                    self.spray_sound.play()
-            
-        # Shooting
+        # Cooldown timer for shooting handled in shoot()
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
             
@@ -619,9 +613,9 @@ class Game:
         self.bullets.empty()
         self.particles.empty()
         
-        # Create player - try to use the uploaded image
+        # Create player and pass active joystick (if any)
         # In a real implementation, you would pass the actual image path here
-        self.player = Player("dove_spray.png")
+        self.player = Player("dove_spray.png", joystick=self.joystick)
         self.all_sprites.add(self.player)
         
         # Create first wave
@@ -651,7 +645,10 @@ class Game:
             
             # Player shooting
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_SPACE]:
+            shoot_pressed = keys[pygame.K_SPACE]
+            if self.joystick:
+                shoot_pressed = shoot_pressed or self.joystick.get_button(0)
+            if shoot_pressed:
                 bullet = self.player.shoot()
                 if bullet:
                     self.bullets.add(bullet)
