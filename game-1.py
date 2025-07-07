@@ -243,7 +243,7 @@ class SoundEffects:
         return pygame.sndarray.make_sound(arr)
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, spray_image_path=None, joystick=None):
+    def __init__(self, spray_image_path=None, joystick=None, joystick_center=0.0):
         super().__init__()
         
         # Try to load the spray image
@@ -265,6 +265,7 @@ class Player(pygame.sprite.Sprite):
         self.speed = 5
         self.shoot_cooldown = 0
         self.joystick = joystick
+        self.joystick_center = joystick_center
         
     def create_default_sprite(self):
         # Fallback to drawn sprite if image can't be loaded - 2x wider!
@@ -314,7 +315,7 @@ class Player(pygame.sprite.Sprite):
 
         # Movement via joystick axis (X axis)
         if self.joystick:
-            x_axis = self.joystick.get_axis(0)
+            x_axis = self.joystick.get_axis(0) - self.joystick_center
             if abs(x_axis) > 0.2:
                 self.rect.x += int(x_axis * self.speed)
 
@@ -486,6 +487,11 @@ class Game:
         self.running = True
         self.font = pygame.font.Font(None, 36)
         self.small_font = pygame.font.Font(None, 24)
+
+        # Joystick calibration values
+        self.calibration_min = 0.0
+        self.calibration_max = 0.0
+        self.joystick_center = 0.0
         
         # Initialize sound effects
         if SOUND_ENABLED:
@@ -507,7 +513,7 @@ class Game:
         else:
             self.sound_enabled = False
         
-        # Game state
+        # Game state will be determined after joystick setup
         self.state = "MENU"
         self.score = 0
         self.level = 1
@@ -545,8 +551,12 @@ class Game:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
             print(f"Joystick initialized: {self.joystick.get_name()}")
+            self.calibration_min = 0.0
+            self.calibration_max = 0.0
+            self.state = "CALIBRATE"
         else:
             self.joystick = None
+            self.state = "MENU"
     def load_high_scores(self):
         try:
             with open("high_scores.json", "r") as f:
@@ -619,7 +629,8 @@ class Game:
         
         # Create player and pass active joystick (if any)
         # In a real implementation, you would pass the actual image path here
-        self.player = Player("dove_spray.png", joystick=self.joystick)
+        self.player = Player("dove_spray.png", joystick=self.joystick,
+                             joystick_center=self.joystick_center)
         self.all_sprites.add(self.player)
         
         # Create first wave
@@ -744,6 +755,21 @@ class Game:
                 
                 # Bonus points for completing level
                 self.score += 100 * self.level
+
+        elif self.state == "CALIBRATE" and self.joystick:
+            # Track axis extremes while the user moves the joystick
+            val = self.joystick.get_axis(0)
+            if val < self.calibration_min:
+                self.calibration_min = val
+            if val > self.calibration_max:
+                self.calibration_max = val
+
+        # Update background stars for all screens
+        for star in self.stars:
+            star['y'] += star['speed']
+            if star['y'] > SCREEN_HEIGHT:
+                star['y'] = 0
+                star['x'] = random.randint(0, SCREEN_WIDTH)
                 
     def game_over(self):
         self.state = "GAME_OVER"
@@ -902,6 +928,34 @@ class Game:
         menu_text = self.small_font.render("Press ESC for main menu", True, WHITE)
         menu_rect = menu_text.get_rect(center=(SCREEN_WIDTH//2, 410))
         self.screen.blit(menu_text, menu_rect)
+
+    def draw_calibration(self):
+        self.screen.fill(BLACK)
+        title = self.font.render("Joystick Calibration", True, WHITE)
+        title_rect = title.get_rect(center=(SCREEN_WIDTH//2, 120))
+        self.screen.blit(title, title_rect)
+
+        if self.joystick:
+            instr1 = self.small_font.render("Move the joystick left and right", True, WHITE)
+            instr2 = self.small_font.render("Press ENTER when done", True, WHITE)
+            self.screen.blit(instr1, instr1.get_rect(center=(SCREEN_WIDTH//2, 180)))
+            self.screen.blit(instr2, instr2.get_rect(center=(SCREEN_WIDTH//2, 210)))
+
+            axis_val = self.joystick.get_axis(0)
+            axis_text = self.small_font.render(f"Axis value: {axis_val:.2f}", True, YELLOW)
+            self.screen.blit(axis_text, axis_text.get_rect(center=(SCREEN_WIDTH//2, 260)))
+
+            bar_width = 300
+            bar_x = SCREEN_WIDTH//2 - bar_width//2
+            bar_y = 300
+            pygame.draw.rect(self.screen, GRAY, (bar_x, bar_y, bar_width, 10))
+            pos = int((axis_val + 1) / 2 * bar_width)
+            pygame.draw.rect(self.screen, GREEN, (bar_x + pos - 5, bar_y - 5, 10, 20))
+        else:
+            nojoy = self.small_font.render("No joystick detected", True, YELLOW)
+            self.screen.blit(nojoy, nojoy.get_rect(center=(SCREEN_WIDTH//2, 200)))
+            instr = self.small_font.render("Press ENTER to continue", True, WHITE)
+            self.screen.blit(instr, instr.get_rect(center=(SCREEN_WIDTH//2, 230)))
         
     def draw(self):
         if self.state == "MENU":
@@ -910,6 +964,8 @@ class Game:
             self.draw_game()
         elif self.state == "GAME_OVER":
             self.draw_game_over()
+        elif self.state == "CALIBRATE":
+            self.draw_calibration()
             
         pygame.display.flip()
         
@@ -931,16 +987,29 @@ class Game:
                         self.start_game()
                     elif event.key == pygame.K_ESCAPE:
                         self.running = False
-                        
+
                 elif self.state == "GAME_OVER":
                     if event.key == pygame.K_RETURN:
                         self.start_game()
                     elif event.key == pygame.K_ESCAPE:
                         self.state = "MENU"
-                        
+
                 elif self.state == "PLAYING":
                     if event.key == pygame.K_ESCAPE:
                         self.state = "MENU"
+
+                elif self.state == "CALIBRATE":
+                    if event.key == pygame.K_RETURN:
+                        if self.joystick:
+                            self.joystick_center = (self.calibration_min + self.calibration_max) / 2
+                        self.state = "MENU"
+                    elif event.key == pygame.K_ESCAPE:
+                        self.state = "MENU"
+
+            if event.type == pygame.JOYBUTTONDOWN and self.state == "CALIBRATE":
+                if self.joystick:
+                    self.joystick_center = (self.calibration_min + self.calibration_max) / 2
+                self.state = "MENU"
                         
     def run(self):
         while self.running:
