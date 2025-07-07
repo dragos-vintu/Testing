@@ -475,7 +475,11 @@ class Particle(pygame.sprite.Sprite):
 
 class Game:
     def __init__(self):
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        global SCREEN_WIDTH, SCREEN_HEIGHT
+        # Query the current desktop resolution and create a full screen window
+        info = pygame.display.Info()
+        SCREEN_WIDTH, SCREEN_HEIGHT = info.current_w, info.current_h
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
         pygame.display.set_caption("Dove Fresh Invaders - Defeat the Bad Odors!")
         self.clock = pygame.time.Clock()
         self.joystick = None
