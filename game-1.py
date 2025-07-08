@@ -3,6 +3,7 @@ import random
 import json
 import os
 import math
+import sys
 
 # Try to import numpy for sound generation
 try:
@@ -243,7 +244,7 @@ class SoundEffects:
         return pygame.sndarray.make_sound(arr)
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, spray_image_path=None, joystick=None, joystick_center=0.0):
+    def __init__(self, spray_image_path=None, joystick=None, joystick_center=0.0, button_map=None):
         super().__init__()
         
         # Try to load the spray image
@@ -266,6 +267,7 @@ class Player(pygame.sprite.Sprite):
         self.shoot_cooldown = 0
         self.joystick = joystick
         self.joystick_center = joystick_center
+        self.button_map = button_map or {}
         
     def create_default_sprite(self):
         # Fallback to drawn sprite if image can't be loaded - 2x wider!
@@ -313,8 +315,14 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH:
             self.rect.x += self.speed
 
-        # Movement via joystick axis (X axis)
+        # Movement via joystick buttons
         if self.joystick:
+            if self.button_map.get("left") is not None and self.joystick.get_button(self.button_map["left"]) and self.rect.left > 0:
+                self.rect.x -= self.speed
+            if self.button_map.get("right") is not None and self.joystick.get_button(self.button_map["right"]) and self.rect.right < SCREEN_WIDTH:
+                self.rect.x += self.speed
+
+            # Movement via joystick axis (X axis)
             x_axis = self.joystick.get_axis(0) - self.joystick_center
             if abs(x_axis) > 0.2:
                 self.rect.x += int(x_axis * self.speed)
@@ -488,6 +496,10 @@ class Game:
         self.font = pygame.font.Font(None, 36)
         self.small_font = pygame.font.Font(None, 24)
 
+        # Button calibration
+        self.button_map = {}
+        self.calibrated_buttons = False
+
         # Joystick calibration values
         self.calibration_min = 0.0
         self.calibration_max = 0.0
@@ -557,6 +569,38 @@ class Game:
         else:
             self.joystick = None
             self.state = "MENU"
+
+    def calibrate_buttons(self):
+        if self.calibrated_buttons or not self.joystick:
+            return
+
+        actions = [
+            ("left", "Move LEFT"),
+            ("right", "Move RIGHT"),
+            ("fire", "FIRE"),
+            ("start", "START"),
+        ]
+
+        font = pygame.font.Font(None, 48)
+
+        for key, prompt in actions:
+            waiting = True
+            while waiting:
+                self.screen.fill(BLACK)
+                text = font.render(f"Press joystick button for {prompt}", True, WHITE)
+                rect = text.get_rect(center=self.screen.get_rect().center)
+                self.screen.blit(text, rect)
+                pygame.display.flip()
+
+                for evt in pygame.event.get():
+                    if evt.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if evt.type == pygame.JOYBUTTONDOWN:
+                        self.button_map[key] = evt.button
+                        waiting = False
+
+        self.calibrated_buttons = True
     def load_high_scores(self):
         try:
             with open("high_scores.json", "r") as f:
@@ -629,8 +673,12 @@ class Game:
         
         # Create player and pass active joystick (if any)
         # In a real implementation, you would pass the actual image path here
-        self.player = Player("canv2.png", joystick=self.joystick,
-                             joystick_center=self.joystick_center)
+        self.player = Player(
+            "canv2.png",
+            joystick=self.joystick,
+            joystick_center=self.joystick_center,
+            button_map=self.button_map,
+        )
         self.all_sprites.add(self.player)
         
         # Create first wave
@@ -661,8 +709,8 @@ class Game:
             # Player shooting
             keys = pygame.key.get_pressed()
             shoot_pressed = keys[pygame.K_SPACE]
-            if self.joystick:
-                shoot_pressed = shoot_pressed or self.joystick.get_button(0)
+            if self.joystick and self.button_map.get("fire") is not None:
+                shoot_pressed = shoot_pressed or self.joystick.get_button(self.button_map["fire"])
             if shoot_pressed:
                 bullet = self.player.shoot()
                 if bullet:
@@ -1002,14 +1050,21 @@ class Game:
                     if event.key == pygame.K_RETURN:
                         if self.joystick:
                             self.joystick_center = (self.calibration_min + self.calibration_max) / 2
+                        self.calibrate_buttons()
                         self.state = "MENU"
                     elif event.key == pygame.K_ESCAPE:
                         self.state = "MENU"
 
-            if event.type == pygame.JOYBUTTONDOWN and self.state == "CALIBRATE":
-                if self.joystick:
-                    self.joystick_center = (self.calibration_min + self.calibration_max) / 2
-                self.state = "MENU"
+            if event.type == pygame.JOYBUTTONDOWN:
+                if self.state == "CALIBRATE":
+                    if self.joystick:
+                        self.joystick_center = (self.calibration_min + self.calibration_max) / 2
+                    self.calibrate_buttons()
+                    self.state = "MENU"
+                elif self.state == "MENU" and event.button == self.button_map.get("start"):
+                    self.start_game()
+                elif self.state == "GAME_OVER" and event.button == self.button_map.get("start"):
+                    self.start_game()
                         
     def run(self):
         while self.running:
