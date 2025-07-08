@@ -250,9 +250,9 @@ class Player(pygame.sprite.Sprite):
         if spray_image_path and os.path.exists(spray_image_path):
             try:
                 original_image = pygame.image.load(spray_image_path)
-                # Scale the image to appropriate size - 2x wider!
+                orig_w, orig_h = original_image.get_size()
                 self.width = 120
-                self.height = 90
+                self.height = int(orig_h * (self.width / orig_w))
                 self.image = pygame.transform.scale(original_image, (self.width, self.height))
             except:
                 self.create_default_sprite()
@@ -629,7 +629,7 @@ class Game:
         
         # Create player and pass active joystick (if any)
         # In a real implementation, you would pass the actual image path here
-        self.player = Player("dove_spray.png", joystick=self.joystick,
+        self.player = Player("canv2.png", joystick=self.joystick,
                              joystick_center=self.joystick_center)
         self.all_sprites.add(self.player)
         
