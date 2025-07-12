@@ -483,13 +483,33 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
 
 class Game:
-    def __init__(self):
+    def set_fullscreen(self):
+        """Initialize a landscape full-screen window."""
         global SCREEN_WIDTH, SCREEN_HEIGHT
-        # Query the current desktop resolution and create a full screen window
         info = pygame.display.Info()
         SCREEN_WIDTH, SCREEN_HEIGHT = info.current_w, info.current_h
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
-        pygame.display.set_caption("Dove Fresh Invaders - Defeat the Bad Odors!")
+        self.screen = pygame.display.set_mode(
+            (SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN
+        )
+
+    def set_portrait_fullscreen(self):
+        """Initialize a portrait oriented full-screen window."""
+        global SCREEN_WIDTH, SCREEN_HEIGHT
+        info = pygame.display.Info()
+        w, h = info.current_w, info.current_h
+        if w > h:
+            SCREEN_WIDTH, SCREEN_HEIGHT = h, w
+        else:
+            SCREEN_WIDTH, SCREEN_HEIGHT = w, h
+        self.screen = pygame.display.set_mode(
+            (SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN
+        )
+
+    def __init__(self):
+        self.set_fullscreen()
+        pygame.display.set_caption(
+            "Dove Fresh Invaders - Defeat the Bad Odors!"
+        )
         self.clock = pygame.time.Clock()
         self.joystick = None
         self.running = True
@@ -563,12 +583,13 @@ class Game:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
             print(f"Joystick initialized: {self.joystick.get_name()}")
-            self.calibration_min = 0.0
-            self.calibration_max = 0.0
-            self.state = "CALIBRATE"
         else:
             self.joystick = None
-            self.state = "MENU"
+
+        # Start on the main menu. Calibration can be triggered with the J key.
+        self.calibration_min = 0.0
+        self.calibration_max = 0.0
+        self.state = "MENU"
 
     def calibrate_buttons(self):
         if self.calibrated_buttons or not self.joystick:
@@ -854,6 +875,7 @@ class Game:
             "Use ARROW KEYS to move",
             "Press SPACE to spray",
             "Press ENTER to start",
+            "Press J to calibrate joystick",
             "Press M to toggle music",
             "Press ESC to quit"
         ]
@@ -1035,6 +1057,10 @@ class Game:
                         self.start_game()
                     elif event.key == pygame.K_ESCAPE:
                         self.running = False
+                    elif event.key == pygame.K_j:
+                        self.calibration_min = 0.0
+                        self.calibration_max = 0.0
+                        self.state = "CALIBRATE"
 
                 elif self.state == "GAME_OVER":
                     if event.key == pygame.K_RETURN:
