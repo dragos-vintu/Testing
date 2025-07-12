@@ -600,6 +600,7 @@ class Game:
             ("right", "Move RIGHT"),
             ("fire", "FIRE"),
             ("start", "START"),
+            ("stop", "STOP GAME"),
         ]
 
         font = pygame.font.Font(None, 48)
@@ -870,7 +871,20 @@ class Game:
         subtitle_rect = subtitle.get_rect(center=(SCREEN_WIDTH//2, 140))
         self.screen.blit(subtitle, subtitle_rect)
         
-        # Instructions
+        # High scores positioned away from the quit instruction
+        y = 220
+        high_score_title = self.small_font.render("HIGH SCORES", True, YELLOW)
+        high_score_rect = high_score_title.get_rect(center=(SCREEN_WIDTH//2, y))
+        self.screen.blit(high_score_title, high_score_rect)
+
+        y += 30
+        for i, score in enumerate(self.high_scores[:5]):
+            score_text = self.small_font.render(f"{i+1}. {score:,}", True, WHITE)
+            score_rect = score_text.get_rect(center=(SCREEN_WIDTH//2, y))
+            self.screen.blit(score_text, score_rect)
+            y += 25
+
+        # Instructions below the high scores
         instructions = [
             "Use ARROW KEYS to move",
             "Press SPACE to spray",
@@ -879,26 +893,13 @@ class Game:
             "Press M to toggle music",
             "Press ESC to quit"
         ]
-        
-        y = 220
+
+        y += 20
         for instruction in instructions:
             text = self.small_font.render(instruction, True, WHITE)
             text_rect = text.get_rect(center=(SCREEN_WIDTH//2, y))
             self.screen.blit(text, text_rect)
             y += 30
-            
-        # High scores
-        y = 380
-        high_score_title = self.small_font.render("HIGH SCORES", True, YELLOW)
-        high_score_rect = high_score_title.get_rect(center=(SCREEN_WIDTH//2, y))
-        self.screen.blit(high_score_title, high_score_rect)
-        
-        y += 30
-        for i, score in enumerate(self.high_scores[:5]):
-            score_text = self.small_font.render(f"{i+1}. {score:,}", True, WHITE)
-            score_rect = score_text.get_rect(center=(SCREEN_WIDTH//2, y))
-            self.screen.blit(score_text, score_rect)
-            y += 25
             
         # Music indicator on menu
         if SOUND_ENABLED:
@@ -1026,6 +1027,10 @@ class Game:
             self.screen.blit(nojoy, nojoy.get_rect(center=(SCREEN_WIDTH//2, 200)))
             instr = self.small_font.render("Press ENTER to continue", True, WHITE)
             self.screen.blit(instr, instr.get_rect(center=(SCREEN_WIDTH//2, 230)))
+
+    def draw_score_overlay(self):
+        score_text = self.small_font.render(f"Score: {self.score:,}", True, WHITE)
+        self.screen.blit(score_text, (10, 10))
         
     def draw(self):
         if self.state == "MENU":
@@ -1036,7 +1041,10 @@ class Game:
             self.draw_game_over()
         elif self.state == "CALIBRATE":
             self.draw_calibration()
-            
+
+        if self.state != "PLAYING":
+            self.draw_score_overlay()
+
         pygame.display.flip()
         
     def handle_events(self):
@@ -1091,6 +1099,8 @@ class Game:
                     self.start_game()
                 elif self.state == "GAME_OVER" and event.button == self.button_map.get("start"):
                     self.start_game()
+                elif self.state == "PLAYING" and event.button == self.button_map.get("stop"):
+                    self.state = "MENU"
                         
     def run(self):
         while self.running:
