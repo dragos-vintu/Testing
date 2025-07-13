@@ -986,8 +986,8 @@ class Game:
         music_text = self.small_font.render(music_status, True, music_color)
         self.screen.blit(music_text, (SCREEN_WIDTH - 80, 70))
 
-        # Grey frame around the game
-        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), 10)
+        # Grey frame around the game - extended to 100 pixels
+        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), 100)
             
     def draw_game_over(self):
         self.screen.fill(BLACK)
