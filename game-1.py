@@ -639,6 +639,7 @@ class Game:
             json.dump(self.high_scores[:10], f)
             
     def add_high_score(self, score):
+        score = math.ceil(score)
         self.high_scores.append(score)
         self.high_scores.sort(reverse=True)
         self.high_scores = self.high_scores[:10]
@@ -895,7 +896,8 @@ class Game:
 
         y += 30
         for i, score in enumerate(self.high_scores[:5]):
-            score_text = self.small_font.render(f"{i+1}. {score:,}", True, WHITE)
+            score_text = self.small_font.render(
+                f"{i+1}. {math.ceil(score):,}", True, WHITE)
             score_rect = score_text.get_rect(center=(SCREEN_WIDTH//2, y))
             self.screen.blit(score_text, score_rect)
             y += 25
@@ -940,14 +942,15 @@ class Game:
         
         # Draw UI with better styling
         # Score prominently centered on screen
-        score_text = self.big_font.render(f"Score: {self.score:,}", True, WHITE)
+        score_text = self.big_font.render(
+            f"Score: {math.ceil(self.score):,}", True, WHITE)
         score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2,
                                                 SCREEN_HEIGHT // 2))
         self.screen.blit(score_text, score_rect)
 
         # Level progress score
         level_score_text = self.small_font.render(
-            f"Level Score: {int(self.level_score):,}/5000", True, WHITE)
+            f"Level Score: {math.ceil(self.level_score):,}/5000", True, WHITE)
         self.screen.blit(level_score_text, (10, 10))
         
         # Combo indicator
@@ -986,8 +989,8 @@ class Game:
         music_text = self.small_font.render(music_status, True, music_color)
         self.screen.blit(music_text, (SCREEN_WIDTH - 80, 70))
 
-        # Grey frame around the game - extended to 100 pixels
-        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), 100)
+        # Grey frame around the game - now 20 pixels wide
+        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), 20)
             
     def draw_game_over(self):
         self.screen.fill(BLACK)
@@ -1006,7 +1009,8 @@ class Game:
         self.screen.blit(game_over_text, game_over_rect)
         
         # Final score
-        score_text = self.font.render(f"Final Score: {self.score:,}", True, WHITE)
+        score_text = self.font.render(
+            f"Final Score: {math.ceil(self.score):,}", True, WHITE)
         score_rect = score_text.get_rect(center=(SCREEN_WIDTH//2, 250))
         self.screen.blit(score_text, score_rect)
         
@@ -1054,7 +1058,8 @@ class Game:
             self.screen.blit(instr, instr.get_rect(center=(SCREEN_WIDTH//2, 230)))
 
     def draw_score_overlay(self):
-        score_text = self.small_font.render(f"Score: {self.score:,}", True, WHITE)
+        score_text = self.small_font.render(
+            f"Score: {math.ceil(self.score):,}", True, WHITE)
         score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - 20, 10))
         self.screen.blit(score_text, score_rect)
         
