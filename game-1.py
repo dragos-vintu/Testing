@@ -921,15 +921,7 @@ class Game:
             self.screen.blit(text, text_rect)
             y += 30
             
-        # Music indicator on menu
-        if SOUND_ENABLED:
-            music_status = "♪ ON" if self.music_channel.get_volume() > 0 else "♪ OFF"
-            music_color = GREEN if self.music_channel.get_volume() > 0 else RED
-        else:
-            music_status = "♪ DISABLED"
-            music_color = GRAY
-        music_text = self.small_font.render(music_status, True, music_color)
-        self.screen.blit(music_text, (SCREEN_WIDTH - 80, BORDER_WIDTH))
+        # Music indicator removed
             
     def draw_game(self):
         self.screen.fill(BLACK)
@@ -982,15 +974,7 @@ class Game:
             pygame.draw.rect(self.screen, GRAY, (x, BORDER_WIDTH - 5, 15, 20))
             pygame.draw.rect(self.screen, DOVE_BLUE, (x + 2, BORDER_WIDTH - 2, 11, 14))
             
-        # Music indicator
-        if SOUND_ENABLED:
-            music_status = "♪ ON" if self.music_channel.get_volume() > 0 else "♪ OFF"
-            music_color = GREEN if self.music_channel.get_volume() > 0 else RED
-        else:
-            music_status = "♪ DISABLED"
-            music_color = GRAY
-        music_text = self.small_font.render(music_status, True, music_color)
-        self.screen.blit(music_text, (SCREEN_WIDTH - 80, 70))
+        # Music indicator removed
 
         # Grey frame around the game
         pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), BORDER_WIDTH)
