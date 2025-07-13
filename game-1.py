@@ -553,6 +553,8 @@ class Game:
         self.high_scores = self.load_high_scores()
         self.combo = 0
         self.combo_timer = 0
+        self.level_score = 0
+        self.points_per_odor = 0
         
         # Sprite groups
         self.all_sprites = pygame.sprite.Group()
@@ -648,6 +650,14 @@ class Game:
         # Increase rows and columns with level, but cap them
         rows = min(base_rows + (self.level - 1) // 2, 6)
         cols = min(base_cols + (self.level - 1), 12)
+
+        # Score setup - each level worth 5000 points total
+        total_odors = rows * cols
+        if total_odors > 0:
+            self.points_per_odor = 5000 / total_odors
+        else:
+            self.points_per_odor = 0
+        self.level_score = 0
         
         # Increase speed with each level
         self.odor_speed = 1 + (self.level - 1) * 0.3
@@ -664,6 +674,7 @@ class Game:
                 y = 50 + row * 50
                 odor_type = min(row, 3)  # Different types for different rows
                 odor = Odor(x, y, odor_type)
+                odor.points = self.points_per_odor
                 self.odors.add(odor)
                 self.all_sprites.add(odor)
                 
@@ -680,6 +691,8 @@ class Game:
         self.lives = 3
         self.combo = 0
         self.combo_timer = 0
+        self.level_score = 0
+        self.points_per_odor = 0
         
         # Reset formation movement
         self.odor_direction = 1
@@ -750,10 +763,11 @@ class Game:
                         # Combo system
                         self.combo += 1
                         self.combo_timer = 60
-                        
-                        # Score with combo multiplier
-                        score_gained = odor.points * min(self.combo, 5)
+
+                        # Score based on level targets
+                        score_gained = self.points_per_odor
                         self.score += score_gained
+                        self.level_score += score_gained
                         
                         self.create_explosion(odor.rect.centerx, odor.rect.centery, FRESH_GREEN)
                         if SOUND_ENABLED:
@@ -927,6 +941,11 @@ class Game:
         score_text = self.font.render(f"Score: {self.score:,}", True, WHITE)
         score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - 20, 10))
         self.screen.blit(score_text, score_rect)
+
+        # Level progress score
+        level_score_text = self.small_font.render(
+            f"Level Score: {int(self.level_score):,}/5000", True, WHITE)
+        self.screen.blit(level_score_text, (10, 10))
         
         # Combo indicator
         if self.combo > 1:
