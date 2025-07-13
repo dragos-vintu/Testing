@@ -22,6 +22,9 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 FPS = 60
 
+# Border thickness for keeping graphics away from the edges
+BORDER_WIDTH = 20
+
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -310,16 +313,16 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
 
         # Movement via keyboard
-        if keys[pygame.K_LEFT] and self.rect.left > 10:
+        if keys[pygame.K_LEFT] and self.rect.left > BORDER_WIDTH:
             self.rect.x -= self.speed
-        if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH - 10:
+        if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH - BORDER_WIDTH:
             self.rect.x += self.speed
 
         # Movement via joystick buttons
         if self.joystick:
-            if self.button_map.get("left") is not None and self.joystick.get_button(self.button_map["left"]) and self.rect.left > 10:
+            if self.button_map.get("left") is not None and self.joystick.get_button(self.button_map["left"]) and self.rect.left > BORDER_WIDTH:
                 self.rect.x -= self.speed
-            if self.button_map.get("right") is not None and self.joystick.get_button(self.button_map["right"]) and self.rect.right < SCREEN_WIDTH - 10:
+            if self.button_map.get("right") is not None and self.joystick.get_button(self.button_map["right"]) and self.rect.right < SCREEN_WIDTH - BORDER_WIDTH:
                 self.rect.x += self.speed
 
             # Movement via joystick axis (X axis)
@@ -328,10 +331,10 @@ class Player(pygame.sprite.Sprite):
                 self.rect.x += int(x_axis * self.speed)
 
         # Keep player within screen bounds
-        if self.rect.left < 10:
-            self.rect.left = 10
-        if self.rect.right > SCREEN_WIDTH - 10:
-            self.rect.right = SCREEN_WIDTH - 10
+        if self.rect.left < BORDER_WIDTH:
+            self.rect.left = BORDER_WIDTH
+        if self.rect.right > SCREEN_WIDTH - BORDER_WIDTH:
+            self.rect.right = SCREEN_WIDTH - BORDER_WIDTH
 
         # Cooldown timer for shooting handled in shoot()
         if self.shoot_cooldown > 0:
@@ -577,8 +580,8 @@ class Game:
         self.stars = []
         for _ in range(100):
             self.stars.append({
-                'x': random.randint(0, SCREEN_WIDTH),
-                'y': random.randint(0, SCREEN_HEIGHT),
+                'x': random.randint(BORDER_WIDTH, SCREEN_WIDTH - BORDER_WIDTH),
+                'y': random.randint(BORDER_WIDTH, SCREEN_HEIGHT - BORDER_WIDTH),
                 'speed': random.uniform(0.5, 2),
                 'size': random.randint(1, 3)
             })
@@ -740,9 +743,9 @@ class Game:
             # Update background stars
             for star in self.stars:
                 star['y'] += star['speed']
-                if star['y'] > SCREEN_HEIGHT:
-                    star['y'] = 0
-                    star['x'] = random.randint(0, SCREEN_WIDTH)
+                if star['y'] > SCREEN_HEIGHT - BORDER_WIDTH:
+                    star['y'] = BORDER_WIDTH
+                    star['x'] = random.randint(BORDER_WIDTH, SCREEN_WIDTH - BORDER_WIDTH)
             
             # Player shooting
             keys = pygame.key.get_pressed()
@@ -796,8 +799,8 @@ class Game:
                 # Check if formation should change direction
                 hit_edge = False
                 for odor in self.odors:
-                    if (self.odor_direction > 0 and odor.rect.right >= SCREEN_WIDTH - 10) or \
-                       (self.odor_direction < 0 and odor.rect.left <= 10):
+                    if (self.odor_direction > 0 and odor.rect.right >= SCREEN_WIDTH - BORDER_WIDTH) or \
+                       (self.odor_direction < 0 and odor.rect.left <= BORDER_WIDTH):
                         hit_edge = True
                         break
                 
@@ -854,9 +857,9 @@ class Game:
         # Update background stars for all screens
         for star in self.stars:
             star['y'] += star['speed']
-            if star['y'] > SCREEN_HEIGHT:
-                star['y'] = 0
-                star['x'] = random.randint(0, SCREEN_WIDTH)
+            if star['y'] > SCREEN_HEIGHT - BORDER_WIDTH:
+                star['y'] = BORDER_WIDTH
+                star['x'] = random.randint(BORDER_WIDTH, SCREEN_WIDTH - BORDER_WIDTH)
                 
     def game_over(self):
         self.state = "GAME_OVER"
@@ -926,7 +929,7 @@ class Game:
             music_status = "♪ DISABLED"
             music_color = GRAY
         music_text = self.small_font.render(music_status, True, music_color)
-        self.screen.blit(music_text, (SCREEN_WIDTH - 80, 20))
+        self.screen.blit(music_text, (SCREEN_WIDTH - 80, BORDER_WIDTH))
             
     def draw_game(self):
         self.screen.fill(BLACK)
@@ -951,13 +954,13 @@ class Game:
         # Level progress score
         level_score_text = self.small_font.render(
             f"Level Score: {math.ceil(self.level_score):,}/5000", True, WHITE)
-        self.screen.blit(level_score_text, (10, 10))
+        self.screen.blit(level_score_text, (BORDER_WIDTH, BORDER_WIDTH))
         
         # Combo indicator
         if self.combo > 1:
             combo_color = YELLOW if self.combo < 5 else ORANGE
             combo_text = self.small_font.render(f"COMBO x{self.combo}!", True, combo_color)
-            self.screen.blit(combo_text, (10, 70))
+            self.screen.blit(combo_text, (BORDER_WIDTH, 70))
         
         # Level
         level_text = self.font.render(f"Level: {self.level}", True, WHITE)
@@ -971,13 +974,13 @@ class Game:
         
         # Lives
         lives_text = self.font.render(f"Lives: ", True, WHITE)
-        self.screen.blit(lives_text, (SCREEN_WIDTH - 200, 10))
+        self.screen.blit(lives_text, (SCREEN_WIDTH - 200, BORDER_WIDTH))
         
         # Draw deodorant icons for lives
         for i in range(self.lives):
             x = SCREEN_WIDTH - 100 + i * 25
-            pygame.draw.rect(self.screen, GRAY, (x, 15, 15, 20))
-            pygame.draw.rect(self.screen, DOVE_BLUE, (x + 2, 18, 11, 14))
+            pygame.draw.rect(self.screen, GRAY, (x, BORDER_WIDTH - 5, 15, 20))
+            pygame.draw.rect(self.screen, DOVE_BLUE, (x + 2, BORDER_WIDTH - 2, 11, 14))
             
         # Music indicator
         if SOUND_ENABLED:
@@ -989,8 +992,8 @@ class Game:
         music_text = self.small_font.render(music_status, True, music_color)
         self.screen.blit(music_text, (SCREEN_WIDTH - 80, 70))
 
-        # Grey frame around the game - now 20 pixels wide
-        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), 20)
+        # Grey frame around the game
+        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), BORDER_WIDTH)
             
     def draw_game_over(self):
         self.screen.fill(BLACK)
@@ -1060,7 +1063,7 @@ class Game:
     def draw_score_overlay(self):
         score_text = self.small_font.render(
             f"Score: {math.ceil(self.score):,}", True, WHITE)
-        score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - 20, 10))
+        score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - BORDER_WIDTH, BORDER_WIDTH))
         self.screen.blit(score_text, score_rect)
         
     def draw(self):
