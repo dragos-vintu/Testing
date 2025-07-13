@@ -515,6 +515,8 @@ class Game:
         self.running = True
         self.font = pygame.font.Font(None, 36)
         self.small_font = pygame.font.Font(None, 24)
+        # Large font for prominently displayed score
+        self.big_font = pygame.font.Font(None, 72)
 
         # Button calibration
         self.button_map = {}
@@ -937,9 +939,10 @@ class Game:
         self.all_sprites.draw(self.screen)
         
         # Draw UI with better styling
-        # Score in the upper right corner
-        score_text = self.font.render(f"Score: {self.score:,}", True, WHITE)
-        score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - 20, 10))
+        # Score prominently centered on screen
+        score_text = self.big_font.render(f"Score: {self.score:,}", True, WHITE)
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2,
+                                                SCREEN_HEIGHT // 2))
         self.screen.blit(score_text, score_rect)
 
         # Level progress score
