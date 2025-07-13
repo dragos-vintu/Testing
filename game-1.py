@@ -890,7 +890,6 @@ class Game:
             "Press SPACE to spray",
             "Press ENTER to start",
             "Press J to calibrate joystick",
-            "Press M to toggle music",
             "Press ESC to quit"
         ]
 
@@ -924,9 +923,10 @@ class Game:
         self.all_sprites.draw(self.screen)
         
         # Draw UI with better styling
-        # Score
+        # Score in the upper right corner
         score_text = self.font.render(f"Score: {self.score:,}", True, WHITE)
-        self.screen.blit(score_text, (10, 10))
+        score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - 20, 10))
+        self.screen.blit(score_text, score_rect)
         
         # Combo indicator
         if self.combo > 1:
@@ -963,6 +963,9 @@ class Game:
             music_color = GRAY
         music_text = self.small_font.render(music_status, True, music_color)
         self.screen.blit(music_text, (SCREEN_WIDTH - 80, 70))
+
+        # Grey frame around the game
+        pygame.draw.rect(self.screen, GRAY, self.screen.get_rect(), 10)
             
     def draw_game_over(self):
         self.screen.fill(BLACK)
@@ -1030,7 +1033,8 @@ class Game:
 
     def draw_score_overlay(self):
         score_text = self.small_font.render(f"Score: {self.score:,}", True, WHITE)
-        self.screen.blit(score_text, (10, 10))
+        score_rect = score_text.get_rect(topright=(SCREEN_WIDTH - 20, 10))
+        self.screen.blit(score_text, score_rect)
         
     def draw(self):
         if self.state == "MENU":
@@ -1053,12 +1057,6 @@ class Game:
                 self.running = False
                 
             if event.type == pygame.KEYDOWN:
-                # Music toggle works in any state
-                if event.key == pygame.K_m and SOUND_ENABLED:
-                    if self.music_channel.get_volume() > 0:
-                        self.music_channel.set_volume(0)
-                    else:
-                        self.music_channel.set_volume(self.music_volume)
                         
                 if self.state == "MENU":
                     if event.key == pygame.K_RETURN:
