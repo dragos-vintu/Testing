@@ -310,16 +310,16 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
 
         # Movement via keyboard
-        if keys[pygame.K_LEFT] and self.rect.left > 0:
+        if keys[pygame.K_LEFT] and self.rect.left > 10:
             self.rect.x -= self.speed
-        if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH:
+        if keys[pygame.K_RIGHT] and self.rect.right < SCREEN_WIDTH - 10:
             self.rect.x += self.speed
 
         # Movement via joystick buttons
         if self.joystick:
-            if self.button_map.get("left") is not None and self.joystick.get_button(self.button_map["left"]) and self.rect.left > 0:
+            if self.button_map.get("left") is not None and self.joystick.get_button(self.button_map["left"]) and self.rect.left > 10:
                 self.rect.x -= self.speed
-            if self.button_map.get("right") is not None and self.joystick.get_button(self.button_map["right"]) and self.rect.right < SCREEN_WIDTH:
+            if self.button_map.get("right") is not None and self.joystick.get_button(self.button_map["right"]) and self.rect.right < SCREEN_WIDTH - 10:
                 self.rect.x += self.speed
 
             # Movement via joystick axis (X axis)
@@ -328,10 +328,10 @@ class Player(pygame.sprite.Sprite):
                 self.rect.x += int(x_axis * self.speed)
 
         # Keep player within screen bounds
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > SCREEN_WIDTH:
-            self.rect.right = SCREEN_WIDTH
+        if self.rect.left < 10:
+            self.rect.left = 10
+        if self.rect.right > SCREEN_WIDTH - 10:
+            self.rect.right = SCREEN_WIDTH - 10
 
         # Cooldown timer for shooting handled in shoot()
         if self.shoot_cooldown > 0:
@@ -779,8 +779,8 @@ class Game:
                 # Check if formation should change direction
                 hit_edge = False
                 for odor in self.odors:
-                    if (self.odor_direction > 0 and odor.rect.right >= SCREEN_WIDTH - 20) or \
-                       (self.odor_direction < 0 and odor.rect.left <= 20):
+                    if (self.odor_direction > 0 and odor.rect.right >= SCREEN_WIDTH - 10) or \
+                       (self.odor_direction < 0 and odor.rect.left <= 10):
                         hit_edge = True
                         break
                 
